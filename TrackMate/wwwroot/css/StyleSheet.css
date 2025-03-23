@@ -1,0 +1,78 @@
+﻿#ButtonContainer{
+    float: right;
+    z-index: 1;
+}
+
+#AddButton {
+    
+    color: white;
+    box-shadow: none;
+    border-color: none;
+
+}
+
+.btn-add-item {
+    background-color: lightseagreen;
+    border-color: black;
+ 
+}
+
+.btn-close-menu {
+    background-color: #dc3545;
+    border-color: black;
+}
+
+#AddItemContainer {
+    position: fixed;
+    top: 170px;
+    right: 20px;
+    background-color: lightseagreen;
+    width: 600px;
+    min-height: 200px;
+    z-index: 100;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#InputContainer {
+    text-align: center;
+    padding: 20px;
+   
+}
+
+#ItemName {
+    margin-bottom: 20px;
+}
+
+#ItemCreatedBy {
+    margin-bottom: 20px;
+}
+
+#ItemStatus {
+    margin-left: 20px;
+    margin-top: 5px;
+}
+
+#SubmitButtonContainer {
+    display: flex;
+    margin-top: 40px;
+    justify-content: center;
+    align-items: center;
+}
+
+#SubmitButton {
+    background-color: #3cb371;
+    border-color: black;
+    box-shadow: none;
+}
+
+#Table {
+    z-index: 0;
+}
+
+#DeleteButton {
+    box-shadow: none;
+}
+
+

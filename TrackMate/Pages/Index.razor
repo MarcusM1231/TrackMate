@@ -1,0 +1,96 @@
+﻿@page "/"
+@using TrackMate.Data;
+@using TrackMate.Service;
+@using TrackMate.Model;
+@inject CollectionService CollectionService
+@inject EventService EventService
+
+<PageTitle>Index</PageTitle>
+
+<head>
+    <link href="/css/Index.css" rel="stylesheet" />
+</head>
+
+<h1>Create New Collections To Track:</h1>
+
+<p></p>
+
+<EditForm Model="@collectionModel" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+
+    <div id="NameContainer">
+        <label>Collection Name: </label>
+        <InputText autocomplete="off" @bind-Value="collectionModel.CollectionName" />
+    </div>
+
+    <div id="CreatedByContainer">
+        <label>Created By: </label>
+        <InputText @bind-Value="collectionModel.CreatedBy" />
+    </div>
+
+    <div id="ButtonContainer">
+        <button type="submit" class="btn btn-primary">Submit</button>
+
+    </div>
+</EditForm>
+
+<hr />
+
+<h2>Existing Collections</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Collection Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var collection in collections)
+        {
+            <tr>
+                <td>@collection.CollectionName</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteCollection(collection)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private CollectionModel collectionModel = new CollectionModel();
+    private List<Collections> collections = new List<Collections>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        collections = await CollectionService.GetCollectionsAsync();
+    }
+
+    private async Task DeleteCollection(Collections collection)
+    {
+        await CollectionService.DeleteCollectionAsync(collection.CollectionID);
+
+        collections.Remove(collection);
+
+        EventService.NotifyCollectionChanged();
+    }
+
+    private async Task HandleSubmit()
+    {
+        var newCollection = new Collections
+            {
+                CollectionID = Guid.NewGuid(),
+                CollectionName = collectionModel.CollectionName,
+                DateCreated = DateTime.Now,
+                Type = 0,
+                CreatedBy = collectionModel.CreatedBy
+            };
+
+        await CollectionService.AddCollectionAsync(newCollection);
+
+        collections.Add(newCollection);
+        collectionModel.CollectionName = string.Empty;
+
+        EventService.NotifyCollectionChanged();
+    }
+}

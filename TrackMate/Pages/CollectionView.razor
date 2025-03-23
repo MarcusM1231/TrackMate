@@ -1,0 +1,174 @@
+﻿@page "/collectionView/{collectionName}/{collectionID:guid}"
+
+@using TrackMate.Data;
+@using TrackMate.Model;
+@inject CollectionService CollectionService
+
+<PageTitle>Collection</PageTitle>
+
+<head>
+    <link href="/css/StyleSheet.css" rel="stylesheet" />
+</head>
+
+<body>
+    <h1>@collectionName</h1>
+    <div id="ButtonContainer">
+        <button id="AddButton" class="btn @(menuShowing ? "btn-close-menu" : "btn-add-item")" @onclick="ToggleMenu">@menuText</button>
+    </div>
+
+    <div id="AddItemContainer" style="display:@(menuShowing ? "block" : "none")">
+        <EditForm Model="itemModel" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <div id="InputContainer">
+
+                <div id="ItemName">
+                    <label style="color: white">Item Name: </label>
+                    <InputText autocomplete="off" @bind-Value="itemModel.ItemName" />
+                </div>
+
+                <div id="ItemCreatedBy">
+                    <label style="color: white">Created By: </label>
+                    <InputText @bind-Value="itemModel.CreatedBy" />
+                </div>
+
+                <div id="ItemStatus">
+                    <label style="color: white">Status: </label>
+                    <InputSelect @bind-Value="selectedStatus">
+                        <option value="1">In Progress</option>
+                        <option value="2">Completed</option>
+                        <option value="3">Paused</option>
+                    </InputSelect>
+                </div>
+
+
+            </div>
+
+            <div id="SubmitButtonContainer">
+                <button id="SubmitButton" type="submit" class="btn btn-primary">Submit</button>
+            </div>
+
+        </EditForm>
+    </div>
+
+    <div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th>Date Added</th>
+                    <th>Date Completed</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in collectionItems)
+                {
+                    <tr>
+                        <td>@item.ItemName</td>
+                        <td>
+                            <select value="@item.Status" @onchange="async e => await UpdateStatus(item, e.Value)">
+                                <option value="1">In Progress</option>
+                                <option value="2">Completed</option>
+                                <option value="3">Paused</option>
+                            </select>
+                        </td>
+                        <td>@item.CreatedBy</td>
+                        <td>@item.DateAdded.ToString("yyyy-MM-dd")</td>
+                        <td>@(item.DateCompleted.HasValue ? item.DateCompleted.Value.ToString("yyyy-MM-dd") : "Not Completed")</td> <!-- Show DateCompleted -->
+                        <td>
+                            <button id="DeleteButton" class="btn btn-danger btn-sm" @onclick="() => DeleteItem(item)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+
+</body>
+
+@code {
+
+    [Parameter]
+    public string collectionName { get; set; }
+
+    [Parameter]
+    public Guid collectionID { get; set; }
+
+    private List<CollectionItems> collectionItems = new List<CollectionItems>();
+    ItemModel itemModel = new ItemModel();
+
+    private string selectedStatus = "1";
+    private string menuText = "Add Item";
+    private bool menuShowing = false;
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        collectionItems = await CollectionService.GetCollectionItemsAsync(collectionID);
+    }
+
+    private async Task UpdateStatus(CollectionItems item, object value)
+    {
+        item.Status = int.Parse(value.ToString());
+
+        if (item.Status == 2 && !item.DateCompleted.HasValue)
+        {
+            item.DateCompleted = DateTime.Now;
+        }
+
+        else if (item.Status != 2)
+        {
+            item.DateCompleted = null;
+        }
+
+        await CollectionService.UpdateCollectionItemAsync(item);
+    }
+
+    private async Task DeleteItem(CollectionItems item)
+    {
+        await CollectionService.DeleteCollectionItemAsync(item.ItemID);
+        collectionItems.Remove(item);
+    }
+
+    private void ToggleMenu()
+    {
+        if (menuShowing)
+        {
+            menuShowing = false;
+            menuText = "Add Item";
+        }
+        else
+        {
+            menuShowing = true;
+            menuText = "Close Menu";
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        var newItem = new CollectionItems
+            {
+                CollectionID = collectionID,
+                ItemID = Guid.NewGuid(),
+                ItemName = itemModel.ItemName,
+                Status = int.Parse(selectedStatus),
+                DateAdded = DateTime.Now,
+                CreatedBy = itemModel.CreatedBy
+            };
+
+        if (newItem.Status == 2)
+        {
+            newItem.DateCompleted = DateTime.Now;
+        }
+
+        await CollectionService.AddCollectionItemAsync(newItem);
+        collectionItems.Add(newItem);
+
+        itemModel.ItemName = string.Empty;
+
+        this.ToggleMenu();
+    }
+}
